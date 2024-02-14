@@ -600,7 +600,7 @@ BINARYNINJACOREAPI void BNFreeUserList(BNUser** users, size_t count) {}
 BINARYNINJACOREAPI char* BNGetUserName(BNUser* user) { return {}; }
 BINARYNINJACOREAPI char* BNGetUserEmail(BNUser* user) { return {}; }
 BINARYNINJACOREAPI char* BNGetUserId(BNUser* user) { return {}; }
-BINARYNINJACOREAPI bool BNOpenProject(BNFileMetadata* file) { return {}; }
+BINARYNINJACOREAPI BNProject* BNOpenProject(const char* path) { return {}; }
 BINARYNINJACOREAPI void BNCloseProject(BNFileMetadata* file) {}
 BINARYNINJACOREAPI bool BNIsProjectOpen(BNFileMetadata* file) { return {}; }
 BINARYNINJACOREAPI char* BNGetCurrentView(BNFileMetadata* file) { return {}; }
@@ -2621,11 +2621,12 @@ BINARYNINJACOREAPI BNIntegerDisplayType BNGetIntegerConstantDisplayType(
   return {};
 }
 BINARYNINJACOREAPI void BNSetIntegerConstantDisplayType(
-    BNFunction* func, BNArchitecture* arch, uint64_t instrAddr, uint64_t value,
-    size_t operand, BNIntegerDisplayType type) {}
-BINARYNINJACOREAPI BNType* BNGetIntegerConstantDisplayTypeEnumerationType(
-    BNFunction* func, BNArchitecture* arch, uint64_t instrAddr, uint64_t value,
-    size_t operand) {
+    BNFunction* func, BNArchitecture* arch, uint64_t instrAddr,
+    uint64_t value, size_t operand, BNIntegerDisplayType type,
+    const char* typeID) {}
+BINARYNINJACOREAPI char* BNGetIntegerConstantDisplayTypeEnumerationType(
+    BNFunction* func, BNArchitecture* arch, uint64_t instrAddr,
+    uint64_t value, size_t operand) {
   return {};
 }
 BINARYNINJACOREAPI void BNSetIntegerConstantDisplayTypeEnumerationType(
@@ -3044,8 +3045,7 @@ BINARYNINJACOREAPI BNQualifiedNameAndType*
 BNGetAnalysisDependencySortedTypeList(BNBinaryView* view, size_t* count) {
   return {};
 }
-BINARYNINJACOREAPI void BNFreeTypeList(BNQualifiedNameAndType* types,
-                                       size_t count) {}
+BINARYNINJACOREAPI void BNFreeTypeList(BNType** types, size_t count) {}
 BINARYNINJACOREAPI void BNFreeTypeIdList(BNQualifiedNameTypeAndId* types,
                                          size_t count) {}
 BINARYNINJACOREAPI BNQualifiedName* BNGetAnalysisTypeNames(
@@ -5391,7 +5391,7 @@ BINARYNINJACOREAPI bool BNAddTypeMemberTokens(BNType* type, BNBinaryView* data,
   return {};
 }
 BINARYNINJACOREAPI BNTypeDefinitionLine* BNGetTypeLines(
-    BNType* type, BNBinaryView* data, const char* name, int lineWidth,
+    BNType* type, BNTypeContainer* types, const char* name, int lineWidth,
     bool collapsed, BNTokenEscapingType escaping, size_t* count) {
   return {};
 }
@@ -5662,9 +5662,8 @@ BINARYNINJACOREAPI BNStructureMember* BNGetStructureMembers(BNStructure* s,
 }
 BINARYNINJACOREAPI void BNFreeStructureMemberList(BNStructureMember* members,
                                                   size_t count) {}
-BINARYNINJACOREAPI BNInheritedStructureMember*
-BNGetStructureMembersIncludingInherited(BNStructure* s, BNBinaryView* view,
-                                        size_t* count) {
+BINARYNINJACOREAPI BNInheritedStructureMember* BNGetStructureMembersIncludingInherited(
+  BNStructure* s, BNTypeContainer* types, size_t* count) {
   return {};
 }
 BINARYNINJACOREAPI void BNFreeInheritedStructureMemberList(
@@ -5986,11 +5985,10 @@ BINARYNINJACOREAPI bool BNGetTypePrinterTypeStringAfterName(
     BNTokenEscapingType escaping, char** result) {
   return {};
 }
-BINARYNINJACOREAPI bool BNGetTypePrinterTypeLines(
-    BNTypePrinter* printer, BNType* type, BNBinaryView* data,
-    BNQualifiedName* name, int lineWidth, bool collapsed,
-    BNTokenEscapingType escaping, BNTypeDefinitionLine** result,
-    size_t* resultCount) {
+BINARYNINJACOREAPI bool BNGetTypePrinterTypeLines(BNTypePrinter* printer,
+  BNType* type, BNTypeContainer* types, BNQualifiedName* name,
+  int lineWidth, bool collapsed, BNTokenEscapingType escaping,
+  BNTypeDefinitionLine** result, size_t* resultCount) {
   return {};
 }
 BINARYNINJACOREAPI bool BNTypePrinterPrintAllTypes(
@@ -7157,8 +7155,8 @@ BINARYNINJACOREAPI int BNLlvmServicesAssemble(const char* src, int dialect,
   return {};
 }
 BINARYNINJACOREAPI void BNLlvmServicesAssembleFree(char* outBytes, char* err) {}
-BINARYNINJACOREAPI int BNDeleteFile(const char* path) { return {}; }
-BINARYNINJACOREAPI int BNDeleteDirectory(const char* path, int contentsOnly) {
+BINARYNINJACOREAPI bool BNDeleteFile(const char* path) { return {}; }
+BINARYNINJACOREAPI bool BNDeleteDirectory(const char* path) {
   return {};
 }
 BINARYNINJACOREAPI bool BNCreateDirectory(const char* path,
@@ -7178,8 +7176,8 @@ BINARYNINJACOREAPI bool BNRenameFile(const char* source, const char* dest) {
 BINARYNINJACOREAPI bool BNCopyFile(const char* source, const char* dest) {
   return {};
 }
-BINARYNINJACOREAPI const char* BNGetFileName(const char* path) { return {}; }
-BINARYNINJACOREAPI const char* BNGetFileExtension(const char* path) {
+BINARYNINJACOREAPI char* BNGetFileName(const char* path) { return {}; }
+BINARYNINJACOREAPI char* BNGetFileExtension(const char* path) {
   return {};
 }
 BINARYNINJACOREAPI char** BNGetFilePathsInDirectory(const char* path,
@@ -7788,9 +7786,10 @@ BINARYNINJACOREAPI bool BNRemoveDebugParserDataVariables(
     BNDebugInfo* const debugInfo, const char* const parserName) {
   return {};
 }
-BINARYNINJACOREAPI bool BNAddDebugType(BNDebugInfo* const debugInfo,
-                                       const char* const name,
-                                       const BNType* const type) {
+BINARYNINJACOREAPI bool BNAddDebugType(
+  BNDebugInfo* const debugInfo, const char* const name,
+  const BNType* const type, const char** const components,
+  size_t components_count) {
   return {};
 }
 BINARYNINJACOREAPI BNNameAndType* BNGetDebugTypes(BNDebugInfo* const debugInfo,
@@ -7828,10 +7827,10 @@ BINARYNINJACOREAPI bool BNRemoveDebugFunctionByIndex(
 }
 BINARYNINJACOREAPI void BNFreeDebugFunctions(BNDebugFunctionInfo* functions,
                                              size_t count) {}
-BINARYNINJACOREAPI bool BNAddDebugDataVariable(BNDebugInfo* const debugInfo,
-                                               uint64_t address,
-                                               const BNType* const type,
-                                               const char* name) {
+BINARYNINJACOREAPI bool BNAddDebugDataVariable(
+  BNDebugInfo* const debugInfo, uint64_t address,
+  const BNType* const type, const char* name,
+  const char** const components, size_t components_count) {
   return {};
 }
 BINARYNINJACOREAPI bool BNAddDebugDataVariableInfo(
